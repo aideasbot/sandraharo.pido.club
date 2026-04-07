@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Studio - Reserva de Turnos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #c2916b; --dark: #1a1a1a; --bg: #fdfaf7; --white: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 0 15px 140px 15px; color: #333; }
+        
+        .header { text-align: center; padding: 40px 0; background: var(--white); margin: 0 -15px 25px -15px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .header h1 { font-family: 'Playfair Display', serif; color: var(--dark); margin: 0; font-size: 28px; }
+        .header p { letter-spacing: 3px; font-size: 10px; font-weight: 700; color: var(--primary); margin: 5px 0 0 0; text-transform: uppercase; }
+
+        .service-card { background: var(--white); border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #f0f0f0; }
+        .service-info { flex: 1; }
+        .service-info h4 { margin: 0; font-size: 16px; }
+        .price-tag { color: var(--primary); font-weight: 800; font-size: 17px; margin-top: 4px; display: block; }
+        
+        .qty-box { display: flex; align-items: center; gap: 12px; background: #f8f8f8; padding: 6px 12px; border-radius: 12px; }
+        .btn-qty { border: none; background: none; font-size: 20px; font-weight: bold; cursor: pointer; }
+
+        #reserva-box { background: var(--white); border-radius: 24px; padding: 25px; margin-top: 25px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .input-style { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 12px; border: 1px solid #eee; background: #f9f9f9; font-size: 15px; box-sizing: border-box; }
+
+        .grid-horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn-hora { padding: 14px; border: 1px solid #eee; border-radius: 12px; background: white; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn-hora.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .btn-finalizar { background: var(--dark); color: white; border: none; padding: 16px 30px; border-radius: 16px; font-weight: 800; font-size: 14px; cursor: pointer; }
+        
+        #loader { text-align: center; padding: 60px; color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>BEAUTY STUDIO</h1>
+        <p>Experiencia de Bienestar</p>
+    </div>
+
+    <div id="loader"><i class="fas fa-spinner fa-spin"></i> Cargando agenda...</div>
+    <div id="lista-servicios"></div>
+
+    <div id="reserva-box">
+        <h3 style="margin: 0 0 25px 0; font-family: 'Playfair Display';">Agenda tu Turno</h3>
+        <label style="font-size: 11px; font-weight: 800; color: var(--primary);">1. ELEGÍ EL DÍA</label>
+        <input type="date" id="fecha" class="input-style" onchange="obtenerHorarios()">
+        
+        <div id="contenedor-horas" style="margin-top: 25px; display: none;">
+            <label style="font-size: 11px; font-weight: 800; color: var(--primary);">2. HORARIOS DISPONIBLES</label>
+            <div class="grid-horas" id="grid-horas"></div>
+        </div>
+
+        <div style="margin-top: 25px;">
+            <label style="font-size: 11px; font-weight: 800; color: var(--primary);">3. TUS DATOS</label>
+            <input type="text" id="nombre-cliente" placeholder="Nombre completo" class="input-style" style="margin-bottom:10px;">
+            <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 1122334455)" class="input-style">
+        </div>
+    </div>
+
+    <div class="footer" id="footer" style="display: none;">
+        <div>
+            <span style="font-size: 10px; font-weight: 800; color: #999;" id="txt-minutos">0 MIN</span><br>
+            <b style="font-size: 24px;">$ <span id="txt-precio">0</span></b>
+        </div>
+        <button class="btn-finalizar" id="btn-reserva" onclick="finalizarReserva()">RESERVAR <i class="fab fa-whatsapp"></i></button>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcfRZwcsYe0u8x7rhlGaCqyQoJRIVWSB66wuO-ZPNkhfBfzTADUayroxbgNk8uW13Q4w/exec";
+
+        let serviciosData = [];
+        let carrito = {};
+        let totalMinutos = 0;
+        let totalPesos = 0;
+        let horaSeleccionada = "";
+
+        async function cargarCatalogo() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getServices`);
+                serviciosData = await res.json();
+                renderServicios();
+                document.getElementById('loader').style.display = 'none';
+            } catch (e) {
+                document.getElementById('loader').innerHTML = "Error de conexión.";
+            }
+        }
+
+        function renderServicios() {
+            const cont = document.getElementById('lista-servicios');
+            cont.innerHTML = "";
+            serviciosData.forEach((s, i) => {
+                cont.innerHTML += `
+                    <div class="service-card">
+                        <div class="service-info">
+                            <h4>${s.nombre}</h4>
+                            <span class="price-tag">$ ${s.precio.toLocaleString()}</span>
+                            <span style="font-size:11px; color:#aaa;">${s.minutos} min</span>
+                        </div>
+                        <div class="qty-box">
+                            <button class="btn-qty" onclick="modificar(${i}, -1)">-</button>
+                            <span id="qty-${i}" style="font-weight:800;">0</span>
+                            <button class="btn-qty" onclick="modificar(${i}, 1)">+</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function modificar(i, d) {
+            if (!carrito[i]) carrito[i] = 0;
+            carrito[i] = Math.max(0, carrito[i] + d);
+            document.getElementById(`qty-${i}`).innerText = carrito[i];
+            recalcular();
+        }
+
+        function recalcular() {
+            totalMinutos = 0; totalPesos = 0;
+            Object.keys(carrito).forEach(i => {
+                totalMinutos += (serviciosData[i].minutos * carrito[i]);
+                totalPesos += (serviciosData[i].precio * carrito[i]);
+            });
+            document.getElementById('txt-minutos').innerText = `${totalMinutos} MIN TOTALES`;
+            document.getElementById('txt-precio').innerText = totalPesos.toLocaleString();
+            document.getElementById('footer').style.display = totalMinutos > 0 ? 'flex' : 'none';
+            document.getElementById('reserva-box').style.display = totalMinutos > 0 ? 'block' : 'none';
+            if(horaSeleccionada) obtenerHorarios();
+        }
+
+        async function obtenerHorarios() {
+            const fecha = document.getElementById('fecha').value;
+            const grid = document.getElementById('grid-horas');
+            if (!fecha) return;
+            grid.innerHTML = "<p style='grid-column:1/4; font-size:12px;'>Buscando horarios...</p>";
+            document.getElementById('contenedor-horas').style.display = 'block';
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getSlots&date=${fecha}&minutes=${totalMinutos}`);
+                const horas = await res.json();
+                grid.innerHTML = "";
+                if (horas.length === 0) {
+                    grid.innerHTML = "<p style='grid-column:1/4; font-size:12px; color:red;'>No hay turnos disponibles para hoy (local cerrado o fuera de horario).</p>";
+                    return;
+                }
+                horas.forEach(h => {
+                    grid.innerHTML += `<button class="btn-hora" onclick="seleccionarHora(this, '${h}')">${h}</button>`;
+                });
+            } catch(e) { grid.innerHTML = "Error al cargar."; }
+        }
+
+        function seleccionarHora(btn, h) {
+            document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            horaSeleccionada = h;
+        }
+
+        async function finalizarReserva() {
+            const nombre = document.getElementById('nombre-cliente').value;
+            const tel = document.getElementById('tel-cliente').value;
+            const fecha = document.getElementById('fecha').value;
+            const btn = document.getElementById('btn-reserva');
+
+            if (!nombre || !horaSeleccionada) return alert("Completa tus datos.");
+
+            btn.disabled = true;
+            btn.innerText = "GUARDANDO...";
+
+            const idReserva = "BK-" + Math.floor(Math.random() * 9000 + 1000);
+            let listaServicios = [];
+            Object.keys(carrito).forEach(i => { if(carrito[i] > 0) listaServicios.push(serviciosData[i].nombre); });
+            const listaTxt = listaServicios.join(", ");
+
+            const urlGrabar = `${SCRIPT_URL}?action=createBooking&id=${idReserva}&date=${fecha}&start=${horaSeleccionada}&name=${encodeURIComponent(nombre)}&tel=${tel}&services=${encodeURIComponent(listaTxt)}&total=${totalPesos}&minutes=${totalMinutos}`;
+
+            try {
+                const response = await fetch(urlGrabar);
+                const resJson = await response.json();
+                if (resJson.status === "success") {
+                    let msj = `¡Hola! Reserva *${idReserva}*%0A*Día:* ${fecha} a las ${horaSeleccionada}hs%0A*Monto:* $${totalPesos.toLocaleString()}`;
+                    window.open(`https://wa.me/5491100000000?text=${msj}`);
+                }
+            } catch (e) { alert("Error al guardar."); }
+            finally { btn.disabled = false; btn.innerText = "RESERVAR"; }
+        }
+
+        cargarCatalogo();
+    </script>
+</body>
+</html>
