@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Beauty Studio - Reservas</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
+
     <style>
         :root { 
             --primary: #c2916b; 
@@ -200,7 +204,15 @@
         .btn-hora.active { background: var(--dark); color: white; border-color: var(--dark); transform: scale(1.05); }
         #reserva-box { background: var(--white); border-radius: 35px; padding: 35px; margin-top: 30px; display: none; box-shadow: var(--shadow); }
         .label-step { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 12px; }
-        .input-style { width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; border: 1.5px solid #eee; background: #fafafa; font-size: 16px; box-sizing: border-box; outline: none; }
+        
+        /* CORRECCIÓN: Scroll-margin para evitar que el campo se pegue arriba al enfocar */
+        .input-style { 
+            width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; 
+            border: 1.5px solid #eee; background: #fafafa; font-size: 16px; 
+            box-sizing: border-box; outline: none;
+            scroll-margin-top: 100px;
+        }
+        
         #msg-error { animation: fadeInUp 0.5s ease; grid-column: 1/4; text-align: center; padding: 25px; display: none; background: var(--white); border-radius: 25px; box-shadow: var(--shadow); margin-top: 15px; }
         .btn-ver-manana { background: var(--dark); color: white; border: none; padding: 16px; border-radius: 18px; font-weight: 700; width: 100%; cursor: pointer; text-transform: uppercase; }
         .order-summary-list { opacity: 0; transform: translateY(10px); transition: 0.4s ease; height: 0; overflow: hidden; }
@@ -277,26 +289,21 @@
             cargarEquipo();
         };
 
-        // CORRECCIÓN 1: Offset más amigable para evitar saltos bruscos
-        function enfocarCampo(elemento) { 
-            setTimeout(() => { 
-                const yOffset = -150; 
-                const y = elemento.getBoundingClientRect().top + window.pageYOffset + yOffset; 
-                window.scrollTo({top: y, behavior: 'smooth'}); 
-            }, 300); 
-        }
+        // CORRECCIÓN: Quitamos el scroll manual intrusivo para móviles
+        function enfocarCampo(elemento) { }
 
-        // CORRECCIÓN 2: El footer aparece discretamente sin expandirse para no mover la pantalla
+        // CORRECCIÓN: Footer discreto sin saltos de pantalla
         function controlarFooter() {
             const telInput = document.getElementById('tel-cliente');
             const footer = document.getElementById('footer');
-            // Mostramos el footer solo cuando hay un número coherente (>6 dígitos)
             if (telInput.value.trim().length > 6) {
                 footer.style.display = 'flex';
-            } else {
-                footer.style.display = 'none';
-                footer.classList.remove('expanded');
-                document.body.style.paddingBottom = "140px";
+                if (!footer.classList.contains('expanded')) {
+                    // Solo expandimos si no estamos escribiendo (opcional según UX)
+                }
+            } else { 
+                footer.classList.remove('expanded'); 
+                document.body.style.paddingBottom = "140px"; 
             }
         }
 
@@ -309,15 +316,12 @@
                 ctx.drawImage(img, 0, 0);
                 const pixel = ctx.getImageData(0, 0, 1, 1).data;
                 const r = pixel[0], g = pixel[1], b = pixel[2];
-                
                 document.documentElement.style.setProperty('--header-bg', `rgb(${r}, ${g}, ${b})`);
                 const brillo = (r * 299 + g * 587 + b * 114) / 1000;
                 header.style.color = brillo < 128 ? '#fff' : '#1a1a1a';
                 header.style.opacity = "1";
                 img.style.display = "inline-block";
-                
             } catch (e) { 
-                console.error("Error al detectar color:", e); 
                 document.getElementById('main-header').style.opacity = "1";
             }
         }
@@ -328,12 +332,8 @@
                 const data = await res.json();
                 const list = document.getElementById('vista-equipo');
                 const header = document.getElementById('main-header');
-                
-                if(data.negocio.logo) { 
-                    document.getElementById('logo-img').src = data.negocio.logo; 
-                } else {
-                    header.style.opacity = "1";
-                }
+                if(data.negocio.logo) document.getElementById('logo-img').src = data.negocio.logo; 
+                else header.style.opacity = "1";
                 
                 data.equipo.forEach(p => {
                     const idProfesional = (p.agenda || p.link_agenda || p.agenda_id || "").toString().trim();
@@ -345,51 +345,28 @@
                         </div>`;
                 });
                 document.getElementById('loader').style.display = 'none';
-            } catch (e) { 
-                document.getElementById('loader').innerHTML = "Error de conexión."; 
-                document.getElementById('main-header').style.opacity = "1";
-            }
+            } catch (e) { document.getElementById('loader').innerHTML = "Error."; }
         }
 
         async function cargarAgenda(id, nombre) {
-            if(!id || id === "") return alert("Error de ID.");
-            nombreEspecialista = nombre;
-            currentSheetId = id;
-            carrito = {}; totalMin = 0; totalPesos = 0; horaSel = "";
+            nombreEspecialista = nombre; currentSheetId = id;
+            carrito = {}; totalMin = 0; totalPesos = 0;
             document.getElementById('footer').style.display = 'none';
             document.getElementById('reserva-box').style.display = 'none';
-            document.getElementById('order-items').innerHTML = "";
             document.getElementById('loader').style.display = 'block';
             document.getElementById('vista-equipo').style.display = 'none';
             document.getElementById('btn-volver').style.display = 'flex';
-
             try {
-                const res = await fetch(`${SCRIPT_URL}?action=getServices&sheetId=${currentSheetId}&_t=${Date.now()}`);
+                const res = await fetch(`${SCRIPT_URL}?action=getServices&sheetId=${currentSheetId}`);
                 const data = await res.json();
                 serviciosData = data.servicios; configNegocio = data.negocio;
-                
-                const catBox = document.getElementById('cat-box');
-                const categorias = ["TODOS", ...new Set(serviciosData.map(s => s.categoria).filter(c => c))];
-                catBox.innerHTML = "";
-                if(categorias.length > 1) {
-                    categorias.forEach(cat => {
-                        catBox.innerHTML += `<div class="cat-pill ${cat === 'TODOS' ? 'active' : ''}" onclick="filtrarCategoria(this, '${cat}')">${cat}</div>`;
-                    });
-                    catBox.style.display = 'flex';
-                }
-
                 const cont = document.getElementById('vista-servicios');
-                cont.innerHTML = ""; 
+                cont.innerHTML = "";
                 serviciosData.forEach((s, i) => {
-                    const imgUrl = s["imagen_(url)"] || s.fotos || s.imagen_url || s.imagen || 'https://via.placeholder.com/400';
                     cont.innerHTML += `
-                    <div class="service-card" id="card-${i}" data-cat="${s.categoria || ''}">
-                        <img src="${imgUrl}" class="service-img-square">
-                        <div class="service-info">
-                            <h4>${s.nombre}</h4>
-                            <span class="price-tag">$ ${s.precio.toLocaleString()}</span>
-                            <div class="time-pill"><i class="far fa-clock"></i> DURACIÓN: ${s.minutos} MIN</div>
-                        </div>
+                    <div class="service-card" id="card-${i}">
+                        <img src="${s.imagen || 'https://via.placeholder.com/100'}" class="service-img-square">
+                        <div class="service-info"><h4>${s.nombre}</h4><span class="price-tag">$ ${s.precio.toLocaleString()}</span><div class="time-pill">${s.minutos} MIN</div></div>
                         <button class="btn-add" id="btn-add-${i}" onclick="toggleServicio(${i})">Solicitar</button>
                     </div>`;
                 });
@@ -399,30 +376,16 @@
             } catch (e) { location.reload(); }
         }
 
-        function filtrarCategoria(btn, cat) {
-            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            const cards = document.querySelectorAll('.service-card');
-            cards.forEach(card => {
-                const categoriaCard = card.getAttribute('data-cat');
-                if(cat === 'TODOS' || categoriaCard === cat) card.style.display = 'flex';
-                else card.style.display = 'none';
-            });
-        }
-
         function toggleServicio(i) {
             if (carrito[i] > 0) {
                 carrito[i] = 0;
                 document.getElementById(`btn-add-${i}`).innerText = "Solicitar";
-                document.getElementById(`btn-add-${i}`).classList.remove('selected');
                 document.getElementById(`card-${i}`).classList.remove('selected');
             } else {
-                const inputFecha = document.getElementById('fecha');
-                if(!inputFecha.value) inputFecha.value = new Date().toISOString().split('T')[0];
                 carrito[i] = 1;
                 document.getElementById(`btn-add-${i}`).innerText = "Quitar";
-                document.getElementById(`btn-add-${i}`).classList.add('selected');
                 document.getElementById(`card-${i}`).classList.add('selected');
+                if(!document.getElementById('fecha').value) document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
             }
             recalcular();
         }
@@ -430,48 +393,43 @@
         function recalcular() {
             totalMin = 0; totalPesos = 0;
             const itemsCont = document.getElementById('order-items');
-            itemsCont.innerHTML = ""; 
+            itemsCont.innerHTML = "";
             Object.keys(carrito).forEach(idx => {
                 if(carrito[idx] > 0) {
-                    totalMin += (serviciosData[idx].minutos * carrito[idx]);
-                    totalPesos += (serviciosData[idx].precio * carrito[idx]);
+                    totalMin += (serviciosData[idx].minutos);
+                    totalPesos += (serviciosData[idx].precio);
                     itemsCont.innerHTML += `<div class="order-item"><span>${serviciosData[idx].nombre}</span><b>$${serviciosData[idx].precio.toLocaleString()}</b></div>`;
                 }
             });
             document.getElementById('txt-minutos').innerText = totalMin + " MIN TOTALES";
             document.getElementById('txt-precio').innerText = totalPesos.toLocaleString();
             const visible = totalMin > 0;
-            
-            // Ajustamos visibilidad básica sin expandir el resumen todavía
             document.getElementById('footer').style.display = visible ? 'flex' : 'none';
             document.getElementById('reserva-box').style.display = visible ? 'block' : 'none';
-            
-            horaSel = ""; if(document.getElementById('fecha').value && visible) obtenerHorarios();
+            if(document.getElementById('fecha').value && visible) obtenerHorarios();
         }
 
         async function obtenerHorarios() {
             const f = document.getElementById('fecha').value;
-            const grid = document.getElementById('grid-horas');
-            const msg = document.getElementById('msg-error');
             if(!f || totalMin === 0) return;
             if (abortController) abortController.abort();
             abortController = new AbortController();
-            grid.innerHTML = "<p style='grid-column:1/4; text-align:center; color:#aaa; font-size:12px;'>Sincronizando disponibilidad...</p>";
-            msg.style.display = 'none'; document.getElementById('contenedor-horas').style.display = 'block';
+            const grid = document.getElementById('grid-horas');
+            grid.innerHTML = "<p style='grid-column:1/4; text-align:center; color:#aaa; font-size:12px;'>Buscando...</p>";
+            document.getElementById('contenedor-horas').style.display = 'block';
             try {
-                const url = `${SCRIPT_URL}?action=getSlots&date=${f}&minutes=${totalMin}&sheetId=${currentSheetId}&_t=${Date.now()}`;
-                const res = await fetch(url, { signal: abortController.signal });
+                const res = await fetch(`${SCRIPT_URL}?action=getSlots&date=${f}&minutes=${totalMin}&sheetId=${currentSheetId}`, { signal: abortController.signal });
                 const horas = await res.json();
                 grid.innerHTML = "";
-                if(horas.length === 0) { msg.style.display = 'block'; return; }
+                if(horas.length === 0) { document.getElementById('msg-error').style.display = 'block'; return; }
                 horas.forEach(h => grid.innerHTML += `<button class="btn-hora" onclick="selH(this, '${h}')">${h}</button>`);
-            } catch(e) { }
+            } catch(e) {}
         }
 
-        function selH(btn, h) { 
-            document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active')); 
-            btn.classList.add('active'); 
-            horaSel = h; 
+        function selH(btn, h) {
+            document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            horaSel = h;
             document.getElementById('seccion-datos').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
@@ -483,7 +441,6 @@
             obtenerHorarios();
         }
 
-        // CORRECCIÓN 3: Al finalizar, si falta algo, expande el resumen para que el usuario lo vea
         async function finalizarReserva() {
             const nomInput = document.getElementById('nombre-cliente');
             const telInput = document.getElementById('tel-cliente');
@@ -492,55 +449,37 @@
             const tel = telInput.value.trim();
             const fecha = document.getElementById('fecha').value;
 
-            // Si el usuario hace clic en reservar, expandimos el detalle del precio y servicios
+            // Expandimos el footer para revisión final
             if(!footer.classList.contains('expanded')) {
                 footer.classList.add('expanded');
                 document.body.style.paddingBottom = "550px";
             }
 
             if(!nom || !tel) {
-                document.getElementById('reserva-box').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
+                document.getElementById('reserva-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return; 
             }
 
             if(!horaSel) {
-                document.getElementById('contenedor-horas').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
+                document.getElementById('contenedor-horas').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
 
             const btnFinal = document.querySelector('.btn-finalizar');
-            btnFinal.disabled = true; 
-            btnFinal.innerText = "RESERVANDO...";
-            
+            btnFinal.disabled = true; btnFinal.innerText = "ESPERE...";
             const id = "BK-" + Math.floor(Math.random()*9000+1000);
-            let srvs = []; 
-            Object.keys(carrito).forEach(i => { 
-                if(carrito[i]>0) srvs.push(serviciosData[i].nombre); 
-            });
-
+            let srvs = []; Object.keys(carrito).forEach(i => { if(carrito[i]>0) srvs.push(serviciosData[i].nombre); });
             const url = `${SCRIPT_URL}?action=createBooking&sheetId=${currentSheetId}&id=${id}&date=${fecha}&start=${horaSel}&name=${encodeURIComponent(nom)}&tel=${tel}&services=${encodeURIComponent(srvs.join(", "))}&total=${totalPesos}&minutes=${totalMin}&pago=${encodeURIComponent(document.getElementById('medio-pago').value)}`;
             
             try {
                 const res = await fetch(url);
                 const json = await res.json();
                 if(json.status === "success") {
-                    let mensaje = `*RESERVA CONFIRMADA* %0A%0AID: ${id}%0AEspecialista: ${nombreEspecialista}%0ADía: ${fecha}%0AHora: ${horaSel} hs%0A%0AServicios:%0A- ${srvs.join('%0A- ')}%0A%0ATotal: $${totalPesos.toLocaleString()}%0ACliente: ${nom}`;
+                    let mensaje = `*RESERVA CONFIRMADA*%0AID: ${id}%0AProfesional: ${nombreEspecialista}%0ADía: ${fecha}%0AHora: ${horaSel}%0ATotal: $${totalPesos}%0ACliente: ${nom}`;
                     window.location.assign(`https://api.whatsapp.com/send?phone=${configNegocio.numero_de_telefono}&text=${mensaje}`);
-                } else { 
-                    alert("Error al agendar."); 
                 }
-            } catch(e) { 
-                alert("Error de conexión."); 
-            } finally { 
-                btnFinal.disabled = false; 
-                btnFinal.innerText = "RESERVAR"; 
-            }
+            } catch(e) { alert("Error."); }
+            finally { btnFinal.disabled = false; btnFinal.innerText = "RESERVAR"; }
         }
     </script>
 </body>
