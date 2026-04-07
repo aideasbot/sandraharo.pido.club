@@ -207,6 +207,17 @@
         .footer.expanded .order-summary-list { opacity: 1; transform: translateY(0); height: auto; margin-bottom: 25px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px; }
         .order-item { display: flex; justify-content: space-between; font-size: 13px; color: #777; margin-bottom: 8px; }
         #loader { text-align: center; padding: 80px 0; color: var(--primary); font-weight: 700; }
+
+        /* NUEVOS ESTILOS PARA EL BOTÓN DE TELÉFONO */
+        .input-tel-container { position: relative; width: 100%; margin-bottom: 20px; }
+        #btn-confirmar-tel {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: var(--dark); color: white; border: none; width: 40px; height: 40px;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 10; margin-top: -10px; /* Ajuste por el padding del input */
+            transition: transform 0.2s;
+        }
+        #btn-confirmar-tel:active { transform: translateY(-50%) scale(0.9); }
     </style>
 </head>
 <body>
@@ -240,7 +251,10 @@
                 <label class="label-step">3. Pago y Datos</label>
                 <select id="medio-pago" class="input-style"></select>
                 <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" class="input-style">
-                <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" onfocus="enfocarCampo(this)">
+                <div class="input-tel-container">
+                    <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" onfocus="enfocarCampo(this)">
+                    <button id="btn-confirmar-tel" onclick="confirmarTelefono()"><i class="fas fa-check"></i></button>
+                </div>
             </div>
         </div>
 
@@ -277,7 +291,6 @@
             cargarEquipo();
         };
 
-        // CORRECCIÓN 1: Offset más amigable para evitar saltos bruscos
         function enfocarCampo(elemento) { 
             setTimeout(() => { 
                 const yOffset = -40; 
@@ -286,18 +299,39 @@
             }, 300); 
         }
 
-        // CORRECCIÓN 2: El footer aparece discretamente sin expandirse para no mover la pantalla
+        // MODIFICADO: Ahora también controla la aparición del botón de tilde
         function controlarFooter() {
             const telInput = document.getElementById('tel-cliente');
             const footer = document.getElementById('footer');
-            // Mostramos el footer solo cuando hay un número coherente (>6 dígitos)
+            const btnConfirm = document.getElementById('btn-confirmar-tel');
+            
             if (telInput.value.trim().length > 6) {
                 footer.style.display = 'flex';
+                btnConfirm.style.display = 'flex';
             } else {
                 footer.style.display = 'none';
                 footer.classList.remove('expanded');
+                btnConfirm.style.display = 'none';
                 document.body.style.paddingBottom = "140px";
             }
+        }
+
+        // NUEVA FUNCIÓN: Oculta teclado y expande el resumen
+        function confirmarTelefono() {
+            const telInput = document.getElementById('tel-cliente');
+            const footer = document.getElementById('footer');
+            
+            telInput.blur(); // Oculta el teclado
+            
+            if(!footer.classList.contains('expanded')) {
+                footer.classList.add('expanded');
+                document.body.style.paddingBottom = "550px";
+            }
+            
+            // Scroll suave hacia el botón de reserva para finalizar el flujo
+            setTimeout(() => {
+                footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 300);
         }
 
         function adaptarFondoAlLogo(img) {
@@ -442,7 +476,6 @@
             document.getElementById('txt-precio').innerText = totalPesos.toLocaleString();
             const visible = totalMin > 0;
             
-            // Ajustamos visibilidad básica sin expandir el resumen todavía
             document.getElementById('footer').style.display = visible ? 'flex' : 'none';
             document.getElementById('reserva-box').style.display = visible ? 'block' : 'none';
             
@@ -483,7 +516,6 @@
             obtenerHorarios();
         }
 
-        // CORRECCIÓN 3: Al finalizar, si falta algo, expande el resumen para que el usuario lo vea
         async function finalizarReserva() {
             const nomInput = document.getElementById('nombre-cliente');
             const telInput = document.getElementById('tel-cliente');
@@ -492,7 +524,6 @@
             const tel = telInput.value.trim();
             const fecha = document.getElementById('fecha').value;
 
-            // Si el usuario hace clic en reservar, expandimos el detalle del precio y servicios
             if(!footer.classList.contains('expanded')) {
                 footer.classList.add('expanded');
                 document.body.style.paddingBottom = "550px";
