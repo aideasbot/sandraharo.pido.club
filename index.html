@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -26,7 +26,8 @@
             padding-bottom: 140px; 
             color: var(--dark); 
             transition: background-color 1s ease; 
-            -webkit-tap-highlight-color: transparent; 
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
         
         @keyframes fadeInUp {
@@ -208,13 +209,12 @@
         .order-item { display: flex; justify-content: space-between; font-size: 13px; color: #777; margin-bottom: 8px; }
         #loader { text-align: center; padding: 80px 0; color: var(--primary); font-weight: 700; }
 
-        /* NUEVOS ESTILOS PARA EL BOT√ìN DE TEL√âFONO */
         .input-tel-container { position: relative; width: 100%; margin-bottom: 20px; }
         #btn-confirmar-tel {
             position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
             background: var(--dark); color: white; border: none; width: 40px; height: 40px;
             border-radius: 50%; display: none; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 10; margin-top: -10px; /* Ajuste por el padding del input */
+            cursor: pointer; z-index: 10; margin-top: -10px;
             transition: transform 0.2s;
         }
         #btn-confirmar-tel:active { transform: translateY(-50%) scale(0.9); }
@@ -227,23 +227,23 @@
         <img id="logo-img" src="" alt="Logo" crossorigin="anonymous" onload="adaptarFondoAlLogo(this)">
     </div>
 
-    <div class="container">
+    <div class="container" id="main-container">
         <div id="loader"><i class="fas fa-circle-notch fa-spin" style="font-size: 28px;"></i></div>
         <div id="vista-equipo"></div>
         <div id="cat-box" class="cat-container" style="display:none;"></div>
         <div id="vista-servicios"></div>
         
         <div id="reserva-box">
-            <h3 style="margin-top:0; font-family:'Inter'; font-weight:800; font-size: 24px;">Agend√° tu Turno</h3>
-            <label class="label-step">1. Eleg√≠ el d√≠a</label>
+            <h3 style="margin-top:0; font-family:'Inter'; font-weight:800; font-size: 24px;">Agend· tu Turno</h3>
+            <label class="label-step">1. ElegÌ el dÌa</label>
             <input type="date" id="fecha" class="input-style" onchange="obtenerHorarios()">
             
             <div id="contenedor-horas" style="display:none; margin-top:25px;">
                 <label class="label-step">2. Horarios Disponibles</label>
                 <div class="grid-horas" id="grid-horas"></div>
                 <div id="msg-error">
-                    <p style="color:#c0392b; font-weight:600; margin-bottom: 15px;">Sin disponibilidad para este d√≠a.</p>
-                    <button class="btn-ver-manana" onclick="irAlDiaSiguiente()">VER MA√ëANA</button>
+                    <p style="color:#c0392b; font-weight:600; margin-bottom: 15px;">Sin disponibilidad para este dÌa.</p>
+                    <button class="btn-ver-manana" onclick="irAlDiaSiguiente()">VER MA—ANA</button>
                 </div>
             </div>
 
@@ -252,7 +252,7 @@
                 <select id="medio-pago" class="input-style"></select>
                 <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" class="input-style">
                 <div class="input-tel-container">
-                    <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" onfocus="enfocarCampo(this)">
+                    <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" onfocus="enfocarCampo(this)" onblur="desenfocarCampo()">
                     <button id="btn-confirmar-tel" onclick="confirmarTelefono()"><i class="fas fa-check"></i></button>
                 </div>
             </div>
@@ -260,10 +260,10 @@
 
         <div class="branding-pido">
             <div class="pido-brand-info">
-                <img src="https://lh3.googleusercontent.com/d/1O8f8Z0VaZJ68QM7LpNEF7LGepHpTxka_plrYZ1XxkFY" class="pido-logo" alt="pido.club">
+                <img src="https://lh3.googleusercontent.com/d/0" class="pido-logo" alt="pido.club">
                 <p>sitio creado por <b>pido.club</b></p>
             </div>
-            <a href="https://www.pido.club" class="btn-quiero-catalogo" target="_blank">QUIERO MI CAT√ÅLOGO</a>
+            <a href="https://www.pido.club" class="btn-quiero-catalogo" target="_blank">QUIERO MI CAT¡LOGO</a>
         </div>
     </div>
 
@@ -291,16 +291,25 @@
             cargarEquipo();
         };
 
-        // FUNCI√ìN MODIFICADA: Ahora asegura que el input se vea sin saltos bruscos
+        // CORRECCI”N CRÕTICA: Enfocar campo sin que el navegador haga scroll violento
         function enfocarCampo(elemento) { 
-            setTimeout(() => { 
-                const yOffset = -20; // Ajuste para que el label superior sea visible
-                const elementRect = elemento.getBoundingClientRect().top + window.pageYOffset;
-                window.scrollTo({
-                    top: elementRect + yOffset,
-                    behavior: 'smooth'
-                });
-            }, 300); // Espera a que el teclado empiece a subir
+            // 1. AÒadimos un espacio gigante temporal abajo para que el navegador no "salte" al final
+            document.body.style.paddingBottom = "80vh";
+            
+            // 2. Usamos scrollIntoView con opciones 'nearest' para evitar desplazamientos innecesarios
+            setTimeout(() => {
+                elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+
+        function desenfocarCampo() {
+            // Restaurar padding normal si no hay carrito activo
+            if (totalMin === 0) {
+                document.body.style.paddingBottom = "140px";
+            } else {
+                const footer = document.getElementById('footer');
+                document.body.style.paddingBottom = footer.classList.contains('expanded') ? "550px" : "140px";
+            }
         }
 
         function controlarFooter() {
@@ -381,7 +390,7 @@
                 });
                 document.getElementById('loader').style.display = 'none';
             } catch (e) { 
-                document.getElementById('loader').innerHTML = "Error de conexi√≥n."; 
+                document.getElementById('loader').innerHTML = "Error de conexiÛn."; 
                 document.getElementById('main-header').style.opacity = "1";
             }
         }
@@ -423,7 +432,7 @@
                         <div class="service-info">
                             <h4>${s.nombre}</h4>
                             <span class="price-tag">$ ${s.precio.toLocaleString()}</span>
-                            <div class="time-pill"><i class="far fa-clock"></i> DURACI√ìN: ${s.minutos} MIN</div>
+                            <div class="time-pill"><i class="far fa-clock"></i> DURACI”N: ${s.minutos} MIN</div>
                         </div>
                         <button class="btn-add" id="btn-add-${i}" onclick="toggleServicio(${i})">Solicitar</button>
                     </div>`;
@@ -562,13 +571,13 @@
                 const res = await fetch(url);
                 const json = await res.json();
                 if(json.status === "success") {
-                    let mensaje = `*RESERVA CONFIRMADA* %0A%0AID: ${id}%0AEspecialista: ${nombreEspecialista}%0AD√≠a: ${fecha}%0AHora: ${horaSel} hs%0A%0AServicios:%0A- ${srvs.join('%0A- ')}%0A%0ATotal: $${totalPesos.toLocaleString()}%0ACliente: ${nom}`;
+                    let mensaje = `*RESERVA CONFIRMADA* %0A%0AID: ${id}%0AEspecialista: ${nombreEspecialista}%0ADÌa: ${fecha}%0AHora: ${horaSel} hs%0A%0AServicios:%0A- ${srvs.join('%0A- ')}%0A%0ATotal: $${totalPesos.toLocaleString()}%0ACliente: ${nom}`;
                     window.location.assign(`https://api.whatsapp.com/send?phone=${configNegocio.numero_de_telefono}&text=${mensaje}`);
                 } else { 
                     alert("Error al agendar."); 
                 }
             } catch(e) { 
-                alert("Error de conexi√≥n."); 
+                alert("Error de conexiÛn."); 
             } finally { 
                 btnFinal.disabled = false; 
                 btnFinal.innerText = "RESERVAR"; 
