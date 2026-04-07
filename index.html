@@ -127,7 +127,16 @@
             flex: 1; 
             display: flex; flex-direction: column; gap: 5px; overflow: hidden;
         }
-        .service-info h4 { margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* CORRECCIÓN TÍTULO: Permitir que el texto baje a la siguiente línea */
+        .service-info h4 { 
+            margin: 0; font-size: 16px; font-weight: 700; 
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            white-space: normal;
+        }
         
         .time-pill { 
             background: var(--primary-light); 
@@ -154,7 +163,6 @@
         }
         .btn-add.selected { background: var(--dark); color: white; }
 
-        /* MODAL POPUP STYLES */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
@@ -313,6 +321,8 @@
         window.onload = () => {
             const hoy = new Date().toISOString().split('T')[0];
             document.getElementById('fecha').setAttribute('min', hoy);
+            // Pre-configuramos la fecha hoy por defecto para cuando el usuario seleccione un servicio
+            document.getElementById('fecha').value = hoy;
             cargarEquipo();
         };
 
@@ -337,7 +347,6 @@
             document.querySelectorAll('.step-container').forEach(s => s.classList.remove('active'));
             document.getElementById(`step-${n}`).classList.add('active');
             
-            // Auto focus para el siguiente campo
             const inputs = { 2: 'tel-cliente', 3: 'medio-pago' };
             if(inputs[n]) document.getElementById(inputs[n]).focus();
         }
@@ -449,6 +458,11 @@
                 document.getElementById(`btn-add-${i}`).innerText = "Quitar";
                 document.getElementById(`btn-add-${i}`).classList.add('selected');
                 document.getElementById(`card-${i}`).classList.add('selected');
+                
+                // CORRECCIÓN: Scroll automático a la sección de reserva
+                setTimeout(() => {
+                   document.getElementById('reserva-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
             }
             recalcular();
         }
@@ -492,7 +506,6 @@
             document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active')); 
             btn.classList.add('active'); 
             horaSel = h; 
-            // Sugerimos al usuario avanzar
             abrirModalDatos();
         }
 
