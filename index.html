@@ -154,6 +154,22 @@
         }
         .btn-add.selected { background: var(--dark); color: white; }
 
+        /* MODAL POPUP STYLES */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+            z-index: 2000; display: none; align-items: flex-end;
+        }
+        .modal-content {
+            background: white; width: 100%; border-radius: 40px 40px 0 0;
+            padding: 30px; box-sizing: border-box; animation: slideUp 0.4s ease;
+            max-height: 90vh; overflow-y: auto;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .step-container { display: none; }
+        .step-container.active { display: block; animation: fadeInUp 0.4s ease; }
+
         .branding-pido { 
             margin-top: 60px; padding: 40px 0; border-top: 1px solid rgba(0,0,0,0.06); 
             display: flex; flex-direction: column; align-items: center; width: 100%;
@@ -181,7 +197,6 @@
             box-shadow: 0 -10px 30px rgba(0,0,0,0.04); 
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); max-height: 85px; 
         }
-        .footer.expanded { max-height: 480px; padding-top: 30px; }
         .footer-main { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 500px; margin: 0 auto; }
         
         .total-labels { display: flex; flex-direction: column; gap: 2px; }
@@ -198,15 +213,20 @@
         .grid-horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; margin: 0 auto; }
         .btn-hora { width: 100%; padding: 16px 0; border: 1.5px solid #f0f0f0; border-radius: 18px; background: white; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .btn-hora.active { background: var(--dark); color: white; border-color: var(--dark); transform: scale(1.05); }
+        
         #reserva-box { background: var(--white); border-radius: 35px; padding: 35px; margin-top: 30px; display: none; box-shadow: var(--shadow); }
         .label-step { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 12px; }
-        .input-style { width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; border: 1.5px solid #eee; background: #fafafa; font-size: 16px; box-sizing: border-box; outline: none; }
+        .input-style { width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; border: 1.5px solid #eee; background: #fafafa; font-size: 16px; box-sizing: border-box; outline: none; font-family: inherit; }
         #msg-error { animation: fadeInUp 0.5s ease; grid-column: 1/4; text-align: center; padding: 25px; display: none; background: var(--white); border-radius: 25px; box-shadow: var(--shadow); margin-top: 15px; }
         .btn-ver-manana { background: var(--dark); color: white; border: none; padding: 16px; border-radius: 18px; font-weight: 700; width: 100%; cursor: pointer; text-transform: uppercase; }
-        .order-summary-list { opacity: 0; transform: translateY(10px); transition: 0.4s ease; height: 0; overflow: hidden; }
-        .footer.expanded .order-summary-list { opacity: 1; transform: translateY(0); height: auto; margin-bottom: 25px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px; }
-        .order-item { display: flex; justify-content: space-between; font-size: 13px; color: #777; margin-bottom: 8px; }
+        
         #loader { text-align: center; padding: 80px 0; color: var(--primary); font-weight: 700; }
+
+        .modal-btn-next {
+            background: var(--dark); color: white; border: none; width: 100%; 
+            padding: 20px; border-radius: 20px; font-weight: 800; font-size: 16px;
+            cursor: pointer; margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -223,7 +243,7 @@
         <div id="vista-servicios"></div>
         
         <div id="reserva-box">
-            <h3 style="margin-top:0; font-family:'Inter'; font-weight:800; font-size: 24px;">Agendá tu Turno</h3>
+            <h3 style="margin-top:0; font-family:'Inter'; font-weight:800; font-size: 24px;">Seleccioná Fecha y Hora</h3>
             <label class="label-step">1. Elegí el día</label>
             <input type="date" id="fecha" class="input-style" onchange="obtenerHorarios()">
             
@@ -235,32 +255,51 @@
                     <button class="btn-ver-manana" onclick="irAlDiaSiguiente()">VER MAÑANA</button>
                 </div>
             </div>
-
-            <div style="margin-top:35px;" id="seccion-datos">
-                <label class="label-step">3. Pago y Datos</label>
-                <select id="medio-pago" class="input-style"></select>
-                <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" class="input-style">
-                <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" onfocus="enfocarCampo(this)">
-            </div>
         </div>
 
         <div class="branding-pido">
             <div class="pido-brand-info">
-                <img src="https://lh3.googleusercontent.com/d/1SGywAsWA8FAiwUhOd03aEhsBzGrXgotX" class="pido-logo" alt="pido.club">
+                <img src="https://lh3.googleusercontent.com/d/1X5X7E9qZ-8mX5X7E9qZ-8mX5X7E9qZ" class="pido-logo" alt="pido.club">
                 <p>sitio creado por <b>pido.club</b></p>
             </div>
             <a href="https://www.pido.club" class="btn-quiero-catalogo" target="_blank">QUIERO MI CATÁLOGO</a>
         </div>
     </div>
 
+    <div class="modal-overlay" id="modal-datos">
+        <div class="modal-content">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="margin:0; font-weight:800; font-size: 22px;">Tus Datos</h3>
+                <button onclick="cerrarModal()" style="background:none; border:none; font-size: 20px; color:#ccc;"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div id="step-1" class="step-container active">
+                <label class="label-step">¿Cómo es tu nombre completo?</label>
+                <input type="text" id="nombre-cliente" placeholder="Ej: Ana García" class="input-style">
+                <button class="modal-btn-next" onclick="siguientePaso(2)">CONTINUAR</button>
+            </div>
+
+            <div id="step-2" class="step-container">
+                <label class="label-step">¿Tu número de WhatsApp?</label>
+                <input type="tel" id="tel-cliente" placeholder="Ej: 11 2233 4455" class="input-style">
+                <button class="modal-btn-next" onclick="siguientePaso(3)">CONTINUAR</button>
+            </div>
+
+            <div id="step-3" class="step-container">
+                <label class="label-step">¿Cómo vas a pagar?</label>
+                <select id="medio-pago" class="input-style"></select>
+                <button class="modal-btn-next" id="btn-final-confirmar" onclick="finalizarReserva()">CONFIRMAR RESERVA</button>
+            </div>
+        </div>
+    </div>
+
     <div class="footer" id="footer">
-        <div class="order-summary-list" id="order-items"></div>
         <div class="footer-main">
             <div class="total-labels">
                 <span class="min-total" id="txt-minutos">0 MIN TOTALES</span>
                 <div class="price-total"><span>$</span><span id="txt-precio">0</span></div>
             </div>
-            <button class="btn-finalizar" onclick="finalizarReserva()">RESERVAR <i class="fab fa-whatsapp" style="margin-left:8px;"></i></button>
+            <button class="btn-finalizar" onclick="abrirModalDatos()">SIGUIENTE <i class="fas fa-chevron-right" style="margin-left:8px;"></i></button>
         </div>
     </div>
 
@@ -277,27 +316,30 @@
             cargarEquipo();
         };
 
-        // CORRECCIÓN 1: Offset más amigable para evitar saltos bruscos
-        function enfocarCampo(elemento) { 
-            setTimeout(() => { 
-                const yOffset = -40; 
-                const y = elemento.getBoundingClientRect().top + window.pageYOffset + yOffset; 
-                window.scrollTo({top: y, behavior: 'smooth'}); 
-            }, 300); 
+        function abrirModalDatos() {
+            if(!horaSel) {
+                alert("Por favor, selecciona un horario primero.");
+                document.getElementById('contenedor-horas').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            document.getElementById('modal-datos').style.display = 'flex';
+            document.getElementById('nombre-cliente').focus();
         }
 
-        // CORRECCIÓN 2: El footer aparece discretamente sin expandirse para no mover la pantalla
-        function controlarFooter() {
-            const telInput = document.getElementById('tel-cliente');
-            const footer = document.getElementById('footer');
-            // Mostramos el footer solo cuando hay un número coherente (>6 dígitos)
-            if (telInput.value.trim().length > 6) {
-                footer.style.display = 'flex';
-            } else {
-                footer.style.display = 'none';
-                footer.classList.remove('expanded');
-                document.body.style.paddingBottom = "140px";
-            }
+        function cerrarModal() {
+            document.getElementById('modal-datos').style.display = 'none';
+        }
+
+        function siguientePaso(n) {
+            if(n === 2 && !document.getElementById('nombre-cliente').value.trim()) return;
+            if(n === 3 && !document.getElementById('tel-cliente').value.trim()) return;
+
+            document.querySelectorAll('.step-container').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step-${n}`).classList.add('active');
+            
+            // Auto focus para el siguiente campo
+            const inputs = { 2: 'tel-cliente', 3: 'medio-pago' };
+            if(inputs[n]) document.getElementById(inputs[n]).focus();
         }
 
         function adaptarFondoAlLogo(img) {
@@ -309,15 +351,12 @@
                 ctx.drawImage(img, 0, 0);
                 const pixel = ctx.getImageData(0, 0, 1, 1).data;
                 const r = pixel[0], g = pixel[1], b = pixel[2];
-                
                 document.documentElement.style.setProperty('--header-bg', `rgb(${r}, ${g}, ${b})`);
                 const brillo = (r * 299 + g * 587 + b * 114) / 1000;
                 header.style.color = brillo < 128 ? '#fff' : '#1a1a1a';
                 header.style.opacity = "1";
                 img.style.display = "inline-block";
-                
             } catch (e) { 
-                console.error("Error al detectar color:", e); 
                 document.getElementById('main-header').style.opacity = "1";
             }
         }
@@ -328,12 +367,8 @@
                 const data = await res.json();
                 const list = document.getElementById('vista-equipo');
                 const header = document.getElementById('main-header');
-                
-                if(data.negocio.logo) { 
-                    document.getElementById('logo-img').src = data.negocio.logo; 
-                } else {
-                    header.style.opacity = "1";
-                }
+                if(data.negocio.logo) document.getElementById('logo-img').src = data.negocio.logo;
+                else header.style.opacity = "1";
                 
                 data.equipo.forEach(p => {
                     const idProfesional = (p.agenda || p.link_agenda || p.agenda_id || "").toString().trim();
@@ -345,20 +380,16 @@
                         </div>`;
                 });
                 document.getElementById('loader').style.display = 'none';
-            } catch (e) { 
-                document.getElementById('loader').innerHTML = "Error de conexión."; 
-                document.getElementById('main-header').style.opacity = "1";
-            }
+            } catch (e) { document.getElementById('loader').innerHTML = "Error de conexión."; }
         }
 
         async function cargarAgenda(id, nombre) {
-            if(!id || id === "") return alert("Error de ID.");
+            if(!id) return;
             nombreEspecialista = nombre;
             currentSheetId = id;
             carrito = {}; totalMin = 0; totalPesos = 0; horaSel = "";
             document.getElementById('footer').style.display = 'none';
             document.getElementById('reserva-box').style.display = 'none';
-            document.getElementById('order-items').innerHTML = "";
             document.getElementById('loader').style.display = 'block';
             document.getElementById('vista-equipo').style.display = 'none';
             document.getElementById('btn-volver').style.display = 'flex';
@@ -388,7 +419,7 @@
                         <div class="service-info">
                             <h4>${s.nombre}</h4>
                             <span class="price-tag">$ ${s.precio.toLocaleString()}</span>
-                            <div class="time-pill"><i class="far fa-clock"></i> DURACIÓN: ${s.minutos} MIN</div>
+                            <div class="time-pill"><i class="far fa-clock"></i> ${s.minutos} MIN</div>
                         </div>
                         <button class="btn-add" id="btn-add-${i}" onclick="toggleServicio(${i})">Solicitar</button>
                     </div>`;
@@ -402,11 +433,8 @@
         function filtrarCategoria(btn, cat) {
             document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
-            const cards = document.querySelectorAll('.service-card');
-            cards.forEach(card => {
-                const categoriaCard = card.getAttribute('data-cat');
-                if(cat === 'TODOS' || categoriaCard === cat) card.style.display = 'flex';
-                else card.style.display = 'none';
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.style.display = (cat === 'TODOS' || card.getAttribute('data-cat') === cat) ? 'flex' : 'none';
             });
         }
 
@@ -417,8 +445,6 @@
                 document.getElementById(`btn-add-${i}`).classList.remove('selected');
                 document.getElementById(`card-${i}`).classList.remove('selected');
             } else {
-                const inputFecha = document.getElementById('fecha');
-                if(!inputFecha.value) inputFecha.value = new Date().toISOString().split('T')[0];
                 carrito[i] = 1;
                 document.getElementById(`btn-add-${i}`).innerText = "Quitar";
                 document.getElementById(`btn-add-${i}`).classList.add('selected');
@@ -429,24 +455,18 @@
 
         function recalcular() {
             totalMin = 0; totalPesos = 0;
-            const itemsCont = document.getElementById('order-items');
-            itemsCont.innerHTML = ""; 
             Object.keys(carrito).forEach(idx => {
                 if(carrito[idx] > 0) {
                     totalMin += (serviciosData[idx].minutos * carrito[idx]);
                     totalPesos += (serviciosData[idx].precio * carrito[idx]);
-                    itemsCont.innerHTML += `<div class="order-item"><span>${serviciosData[idx].nombre}</span><b>$${serviciosData[idx].precio.toLocaleString()}</b></div>`;
                 }
             });
             document.getElementById('txt-minutos').innerText = totalMin + " MIN TOTALES";
             document.getElementById('txt-precio').innerText = totalPesos.toLocaleString();
             const visible = totalMin > 0;
-            
-            // Ajustamos visibilidad básica sin expandir el resumen todavía
             document.getElementById('footer').style.display = visible ? 'flex' : 'none';
             document.getElementById('reserva-box').style.display = visible ? 'block' : 'none';
-            
-            horaSel = ""; if(document.getElementById('fecha').value && visible) obtenerHorarios();
+            if(document.getElementById('fecha').value && visible) obtenerHorarios();
         }
 
         async function obtenerHorarios() {
@@ -472,7 +492,8 @@
             document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active')); 
             btn.classList.add('active'); 
             horaSel = h; 
-            document.getElementById('seccion-datos').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Sugerimos al usuario avanzar
+            abrirModalDatos();
         }
 
         function irAlDiaSiguiente() {
@@ -483,46 +504,20 @@
             obtenerHorarios();
         }
 
-        // CORRECCIÓN 3: Al finalizar, si falta algo, expande el resumen para que el usuario lo vea
         async function finalizarReserva() {
-            const nomInput = document.getElementById('nombre-cliente');
-            const telInput = document.getElementById('tel-cliente');
-            const footer = document.getElementById('footer');
-            const nom = nomInput.value.trim();
-            const tel = telInput.value.trim();
+            const nom = document.getElementById('nombre-cliente').value.trim();
+            const tel = document.getElementById('tel-cliente').value.trim();
             const fecha = document.getElementById('fecha').value;
+            const btnFinal = document.getElementById('btn-final-confirmar');
 
-            // Si el usuario hace clic en reservar, expandimos el detalle del precio y servicios
-            if(!footer.classList.contains('expanded')) {
-                footer.classList.add('expanded');
-                document.body.style.paddingBottom = "550px";
-            }
+            if(!nom || !tel) return alert("Completa tus datos");
 
-            if(!nom || !tel) {
-                document.getElementById('reserva-box').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-                return; 
-            }
-
-            if(!horaSel) {
-                document.getElementById('contenedor-horas').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-                return;
-            }
-
-            const btnFinal = document.querySelector('.btn-finalizar');
             btnFinal.disabled = true; 
-            btnFinal.innerText = "RESERVANDO...";
+            btnFinal.innerText = "PROCESANDO...";
             
             const id = "BK-" + Math.floor(Math.random()*9000+1000);
             let srvs = []; 
-            Object.keys(carrito).forEach(i => { 
-                if(carrito[i]>0) srvs.push(serviciosData[i].nombre); 
-            });
+            Object.keys(carrito).forEach(i => { if(carrito[i]>0) srvs.push(serviciosData[i].nombre); });
 
             const url = `${SCRIPT_URL}?action=createBooking&sheetId=${currentSheetId}&id=${id}&date=${fecha}&start=${horaSel}&name=${encodeURIComponent(nom)}&tel=${tel}&services=${encodeURIComponent(srvs.join(", "))}&total=${totalPesos}&minutes=${totalMin}&pago=${encodeURIComponent(document.getElementById('medio-pago').value)}`;
             
@@ -532,14 +527,11 @@
                 if(json.status === "success") {
                     let mensaje = `*RESERVA CONFIRMADA* %0A%0AID: ${id}%0AEspecialista: ${nombreEspecialista}%0ADía: ${fecha}%0AHora: ${horaSel} hs%0A%0AServicios:%0A- ${srvs.join('%0A- ')}%0A%0ATotal: $${totalPesos.toLocaleString()}%0ACliente: ${nom}`;
                     window.location.assign(`https://api.whatsapp.com/send?phone=${configNegocio.numero_de_telefono}&text=${mensaje}`);
-                } else { 
-                    alert("Error al agendar."); 
-                }
-            } catch(e) { 
-                alert("Error de conexión."); 
-            } finally { 
+                } else { alert("Error al agendar."); }
+            } catch(e) { alert("Error de conexión."); }
+            finally { 
                 btnFinal.disabled = false; 
-                btnFinal.innerText = "RESERVAR"; 
+                btnFinal.innerText = "CONFIRMAR RESERVA"; 
             }
         }
     </script>
