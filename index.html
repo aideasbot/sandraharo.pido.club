@@ -280,7 +280,7 @@
         // CORRECCIÓN 1: Offset más amigable para evitar saltos bruscos
         function enfocarCampo(elemento) { 
             setTimeout(() => { 
-                const yOffset = -20; 
+                const yOffset = -150; 
                 const y = elemento.getBoundingClientRect().top + window.pageYOffset + yOffset; 
                 window.scrollTo({top: y, behavior: 'smooth'}); 
             }, 300); 
