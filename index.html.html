@@ -1,0 +1,362 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Beauty Studio - Reservas</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
+
+    <style>
+        :root { 
+            --primary: #c2916b; 
+            --primary-light: #f4ece6; 
+            --dark: #1a1a1a; 
+            --bg: #fdfaf7; 
+            --header-bg: #ffffff; 
+            --white: #ffffff; 
+            --shadow: 0 12px 40px rgba(0,0,0,0.06); 
+            --radius-lg: 28px; 
+            --radius-capsule: 60px; 
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            padding-bottom: 140px; 
+            color: var(--dark); 
+            transition: background-color 1s ease; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        .header { 
+            text-align: center; padding: 15px 20px; background: var(--header-bg); 
+            box-shadow: var(--shadow); border-radius: 0 0 40px 40px; 
+            margin-bottom: 25px; position: relative; display: flex;
+            align-items: center; justify-content: center; min-height: 60px;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        
+        #logo-img { max-height: 90px; width: auto; display: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.03)); }
+
+        #btn-volver { 
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%); 
+            background: rgba(255,255,255,0.2); border: none; width: 38px; height: 38px; 
+            border-radius: 50%; display: none; cursor: pointer; align-items: center; 
+            justify-content: center; z-index: 10; color: inherit;
+        }
+        
+        .container { padding: 0 20px; max-width: 550px; margin: 0 auto; }
+        
+        .cat-container { display: flex; gap: 10px; overflow-x: auto; padding: 5px 5px 20px 5px; margin-bottom: 10px; scrollbar-width: none; }
+        .cat-container::-webkit-scrollbar { display: none; }
+
+        .cat-pill {
+            white-space: nowrap; padding: 10px 22px; border-radius: 50px;
+            background: var(--white); border: 1.5px solid #eee; font-size: 11px;
+            font-weight: 800; color: #888; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .cat-pill.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+
+        .staff-card { 
+            background: var(--white); border-radius: var(--radius-capsule); 
+            padding: 10px; margin-bottom: 18px; display: flex; 
+            align-items: center; gap: 20px; cursor: pointer; box-shadow: var(--shadow); 
+        }
+        .staff-img-container { width: 70px; height: 70px; border-radius: 50%; padding: 3px; background: var(--primary-light); flex-shrink: 0; }
+        .staff-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .staff-info h3 { margin: 0; font-size: 18px; font-weight: 700; }
+        .staff-info span { font-size: 11px; color: var(--primary); font-weight: 800; text-transform: uppercase; }
+
+        .service-card { 
+            background: var(--white); border-radius: var(--radius-lg); margin-bottom: 18px; 
+            display: flex; align-items: center; padding: 18px; gap: 15px; box-shadow: var(--shadow); 
+            border: 2px solid transparent; transition: all 0.4s ease; 
+        }
+        .service-card.selected { border-color: var(--primary); background: #fffcf9; }
+        .service-img-square { width: 85px; height: 85px; border-radius: 20px; object-fit: cover; flex-shrink: 0; background: #f0f0f0; }
+        .service-info { flex: 1; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+        .service-info h4 { margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .time-pill { background: var(--primary-light); color: #5d4037; padding: 5px 12px; border-radius: 50px; font-size: 9px; font-weight: 800; display: flex; align-items: center; gap: 6px; width: fit-content; }
+        .price-tag { font-size: 18px; font-weight: 800; color: var(--primary); }
+        
+        .btn-add { background: #f4f4f4; color: var(--dark); border: none; padding: 12px 15px; border-radius: 14px; font-size: 11px; font-weight: 800; cursor: pointer; min-width: 95px; }
+        .btn-add.selected { background: var(--dark); color: white; }
+
+        .footer { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 15px 25px 35px 25px; display: none; flex-direction: column; 
+            border-top: 1px solid rgba(0,0,0,0.05); z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.04); 
+            transition: all 0.5s ease; max-height: 95px; 
+        }
+        .footer.expanded { max-height: 500px; padding-top: 30px; }
+        .footer-main { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 500px; margin: 0 auto; }
+        .total-labels .min-total { font-size: 9px; font-weight: 700; color: #000; letter-spacing: 1.5px; }
+        .total-labels .price-total { font-size: 28px; color: #000; font-weight: 800; line-height: 1; }
+        .btn-finalizar { background: var(--dark); color: white; border: none; padding: 14px 28px; border-radius: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+
+        .grid-horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .btn-hora { width: 100%; padding: 16px 0; border: 1.5px solid #f0f0f0; border-radius: 18px; background: white; font-weight: 700; cursor: pointer; }
+        .btn-hora.active { background: var(--dark); color: white; border-color: var(--dark); }
+        
+        #reserva-box { background: var(--white); border-radius: 35px; padding: 35px; margin-top: 30px; display: none; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .label-step { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 12px; }
+        
+        .input-style { 
+            width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; 
+            border: 1.5px solid #eee; background: #fafafa; font-size: 16px; 
+            box-sizing: border-box; outline: none; scroll-margin-top: 100px;
+        }
+        
+        .order-summary-list { opacity: 0; transition: 0.4s; height: 0; overflow: hidden; }
+        .footer.expanded .order-summary-list { opacity: 1; height: auto; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .order-item { display: flex; justify-content: space-between; font-size: 13px; color: #777; margin-bottom: 8px; }
+        
+        .branding-pido { margin-top: 40px; padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
+        #loader { text-align: center; padding: 80px 0; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="header" id="main-header">
+        <button id="btn-volver" onclick="location.reload()"><i class="fas fa-arrow-left"></i></button>
+        <canvas id="canvas-logo" style="display:none;"></canvas>
+        <img id="logo-img" src="" alt="Logo" crossorigin="anonymous" onload="adaptarFondoAlLogo(this)">
+    </div>
+
+    <div class="container">
+        <div id="loader"><i class="fas fa-circle-notch fa-spin" style="font-size: 28px;"></i></div>
+        <div id="vista-equipo"></div>
+        <div id="cat-box" class="cat-container" style="display:none;"></div>
+        <div id="vista-servicios"></div>
+        
+        <div id="reserva-box">
+            <h3 style="margin-top:0; font-weight:800; font-size: 24px;">Agendá tu Turno</h3>
+            <label class="label-step">1. Elegí el día</label>
+            <input type="date" id="fecha" class="input-style" onchange="obtenerHorarios()">
+            
+            <div id="contenedor-horas" style="display:none; margin-top:25px;">
+                <label class="label-step">2. Horarios Disponibles</label>
+                <div class="grid-horas" id="grid-horas"></div>
+            </div>
+
+            <div style="margin-top:35px;" id="seccion-datos">
+                <label class="label-step">3. Pago y Datos</label>
+                <select id="medio-pago" class="input-style"></select>
+                <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" class="input-style" enterkeyhint="next">
+                <input type="tel" id="tel-cliente" placeholder="WhatsApp (ej: 11 2233 4455)" class="input-style" oninput="controlarFooter()" enterkeyhint="done">
+            </div>
+        </div>
+
+        <div class="branding-pido">
+            <p style="font-size: 13px; color: #888;">creado por <b>pido.club</b></p>
+        </div>
+    </div>
+
+    <div class="footer" id="footer">
+        <div class="order-summary-list" id="order-items"></div>
+        <div class="footer-main">
+            <div class="total-labels">
+                <span class="min-total" id="txt-minutos">0 MIN</span>
+                <div class="price-total">$<span id="txt-precio">0</span></div>
+            </div>
+            <button class="btn-finalizar" onclick="finalizarReserva()">RESERVAR <i class="fab fa-whatsapp"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgmmeDbbWUh4xsRliZ-SJ88OdgAWA4B_Ek7QfW-6MlFoEh6uBDcQ4pDChz1JBoCYY2/exec";
+        const MAIN_SHEET_ID = "1O8f8Z0VaZJ68QM7LpNEF7LGepHpTxka_plrYZ1XxkFY";
+
+        let currentSheetId = "", serviciosData = [], configNegocio = {}, carrito = {}, totalMin = 0, totalPesos = 0, horaSel = "", nombreEspecialista = "";
+        let abortController = null;
+
+        window.onload = () => {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').setAttribute('min', hoy);
+            cargarEquipo();
+        };
+
+        function enfocarCampo(elemento) { }
+
+        function controlarFooter() {
+            const telInput = document.getElementById('tel-cliente');
+            const footer = document.getElementById('footer');
+            const valor = telInput.value.trim();
+
+            if (valor.length > 6) {
+                footer.style.display = 'flex';
+                // Si parece un número completo (ej. 10 dígitos), bajamos al botón
+                if (valor.length >= 10) {
+                   if (!footer.classList.contains('expanded')) {
+                        footer.classList.add('expanded');
+                        document.body.style.paddingBottom = "500px";
+                        // Scroll suave para mostrar el botón de reservar
+                        setTimeout(() => {
+                            footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        }, 100);
+                   }
+                }
+            } else { 
+                footer.classList.remove('expanded'); 
+                document.body.style.paddingBottom = "140px"; 
+            }
+        }
+
+        function adaptarFondoAlLogo(img) {
+            try {
+                const header = document.getElementById('main-header');
+                const canvas = document.getElementById('canvas-logo'); 
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                ctx.drawImage(img, 0, 0);
+                const pixel = ctx.getImageData(0, 0, 1, 1).data;
+                document.documentElement.style.setProperty('--header-bg', `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`);
+                header.style.opacity = "1";
+                img.style.display = "inline-block";
+            } catch (e) { document.getElementById('main-header').style.opacity = "1"; }
+        }
+
+        async function cargarEquipo() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getStaff&sheetId=${MAIN_SHEET_ID}`);
+                const data = await res.json();
+                const list = document.getElementById('vista-equipo');
+                if(data.negocio.logo) document.getElementById('logo-img').src = data.negocio.logo;
+                
+                data.equipo.forEach(p => {
+                    const id = (p.agenda || p.link_agenda || p.agenda_id || "").toString().trim();
+                    list.innerHTML += `
+                        <div class="staff-card" onclick="cargarAgenda('${id}', '${p.nombre}')">
+                            <div class="staff-img-container"><img src="${p.imagen}" class="staff-img"></div>
+                            <div class="staff-info"><h3>${p.nombre}</h3><span>${p.especialidad}</span></div>
+                            <i class="fas fa-chevron-right" style="color:#ddd; margin-left:auto;"></i>
+                        </div>`;
+                });
+                document.getElementById('loader').style.display = 'none';
+            } catch (e) { document.getElementById('loader').innerText = "Error."; }
+        }
+
+        async function cargarAgenda(id, nombre) {
+            nombreEspecialista = nombre; currentSheetId = id;
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('vista-equipo').style.display = 'none';
+            document.getElementById('btn-volver').style.display = 'flex';
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getServices&sheetId=${currentSheetId}`);
+                const data = await res.json();
+                serviciosData = data.servicios; configNegocio = data.negocio;
+                const cont = document.getElementById('vista-servicios');
+                cont.innerHTML = "";
+                
+                serviciosData.forEach((s, i) => {
+                    // RECUPERACIÓN DE IMAGENES: Buscamos en todas las posibles columnas de la tabla
+                    const imgUrl = s["imagen_(url)"] || s.fotos || s.imagen_url || s.imagen || 'https://via.placeholder.com/150';
+                    
+                    cont.innerHTML += `
+                    <div class="service-card" id="card-${i}">
+                        <img src="${imgUrl}" class="service-img-square">
+                        <div class="service-info">
+                            <h4>${s.nombre}</h4>
+                            <span class="price-tag">$ ${s.precio.toLocaleString()}</span>
+                            <div class="time-pill"><i class="far fa-clock"></i> ${s.minutos} MIN</div>
+                        </div>
+                        <button class="btn-add" id="btn-add-${i}" onclick="toggleServicio(${i})">Solicitar</button>
+                    </div>`;
+                });
+                const sel = document.getElementById('medio-pago'); sel.innerHTML = "";
+                configNegocio.medios_de_pago.split(",").forEach(m => sel.innerHTML += `<option value="${m.trim()}">${m.trim()}</option>`);
+                document.getElementById('loader').style.display = 'none';
+            } catch (e) { location.reload(); }
+        }
+
+        function toggleServicio(i) {
+            if (carrito[i] > 0) {
+                carrito[i] = 0;
+                document.getElementById(`btn-add-${i}`).innerText = "Solicitar";
+                document.getElementById(`card-${i}`).classList.remove('selected');
+            } else {
+                carrito[i] = 1;
+                document.getElementById(`btn-add-${i}`).innerText = "Quitar";
+                document.getElementById(`card-${i}`).classList.add('selected');
+                if(!document.getElementById('fecha').value) document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+            }
+            recalcular();
+        }
+
+        function recalcular() {
+            totalMin = 0; totalPesos = 0;
+            const itemsCont = document.getElementById('order-items');
+            itemsCont.innerHTML = "";
+            Object.keys(carrito).forEach(idx => {
+                if(carrito[idx] > 0) {
+                    totalMin += (serviciosData[idx].minutos);
+                    totalPesos += (serviciosData[idx].precio);
+                    itemsCont.innerHTML += `<div class="order-item"><span>${serviciosData[idx].nombre}</span><b>$${serviciosData[idx].precio.toLocaleString()}</b></div>`;
+                }
+            });
+            document.getElementById('txt-minutos').innerText = totalMin + " MIN TOTALES";
+            document.getElementById('txt-precio').innerText = totalPesos.toLocaleString();
+            const visible = totalMin > 0;
+            document.getElementById('footer').style.display = visible ? 'flex' : 'none';
+            document.getElementById('reserva-box').style.display = visible ? 'block' : 'none';
+            if(document.getElementById('fecha').value && visible) obtenerHorarios();
+        }
+
+        async function obtenerHorarios() {
+            const f = document.getElementById('fecha').value;
+            if(!f || totalMin === 0) return;
+            if (abortController) abortController.abort();
+            abortController = new AbortController();
+            const grid = document.getElementById('grid-horas');
+            grid.innerHTML = "<p style='grid-column:1/4; font-size:12px; color:#999;'>Buscando...</p>";
+            document.getElementById('contenedor-horas').style.display = 'block';
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getSlots&date=${f}&minutes=${totalMin}&sheetId=${currentSheetId}`, { signal: abortController.signal });
+                const horas = await res.json();
+                grid.innerHTML = "";
+                horas.forEach(h => grid.innerHTML += `<button class="btn-hora" onclick="selH(this, '${h}')">${h}</button>`);
+            } catch(e) {}
+        }
+
+        function selH(btn, h) {
+            document.querySelectorAll('.btn-hora').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            horaSel = h;
+            document.getElementById('seccion-datos').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function finalizarReserva() {
+            const nom = document.getElementById('nombre-cliente').value.trim();
+            const tel = document.getElementById('tel-cliente').value.trim();
+            const fecha = document.getElementById('fecha').value;
+
+            if(!nom || !tel || !horaSel) {
+                document.getElementById('reserva-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const btnFinal = document.querySelector('.btn-finalizar');
+            btnFinal.disabled = true; btnFinal.innerText = "ESPERE...";
+            const id = "BK-" + Math.floor(Math.random()*9000+1000);
+            let srvs = []; Object.keys(carrito).forEach(i => { if(carrito[i]>0) srvs.push(serviciosData[i].nombre); });
+            const url = `${SCRIPT_URL}?action=createBooking&sheetId=${currentSheetId}&id=${id}&date=${fecha}&start=${horaSel}&name=${encodeURIComponent(nom)}&tel=${tel}&services=${encodeURIComponent(srvs.join(", "))}&total=${totalPesos}&minutes=${totalMin}&pago=${encodeURIComponent(document.getElementById('medio-pago').value)}`;
+            
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                if(json.status === "success") {
+                    let mensaje = `*RESERVA CONFIRMADA*%0AID: ${id}%0AProfesional: ${nombreEspecialista}%0ADía: ${fecha}%0AHora: ${horaSel}%0ATotal: $${totalPesos}%0ACliente: ${nom}`;
+                    window.location.assign(`https://api.whatsapp.com/send?phone=${configNegocio.numero_de_telefono}&text=${mensaje}`);
+                }
+            } catch(e) { alert("Error."); }
+            finally { btnFinal.disabled = false; btnFinal.innerText = "RESERVAR"; }
+        }
+    </script>
+</body>
+</html>
